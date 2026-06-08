@@ -1,16 +1,20 @@
+# Dependencies
 node_modules/
 client/node_modules/
+
+# React build (Railway builds this automatically)
 client/build/
 
-# Secrets � never commit these
+# Environment secrets — NEVER commit these
 .env
+
+# Google credentials — NEVER commit this
 credentials.json
 
-# OS & editor
-.DS_Store
+# Logs
 *.log
-.vs/
-Thumbs.db
+npm-debug.log*
 
-# Temp/helper scripts
-fix-emoji.js
+# OS files
+.DS_Store
+Thumbs.db

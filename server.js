@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
@@ -10,11 +11,14 @@ app.use(express.json());
 
 // ─────────────────────────────────────────────
 // Google Sheets Setup
+// Local dev  → uses credentials.json file
+// Railway    → uses GOOGLE_CREDENTIALS_JSON env variable
 // ─────────────────────────────────────────────
-const auth = new google.auth.GoogleAuth({
-  keyFile: 'credentials.json',
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
+const googleAuthConfig = process.env.GOOGLE_CREDENTIALS_JSON
+  ? { credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON), scopes: ['https://www.googleapis.com/auth/spreadsheets'] }
+  : { keyFile: 'credentials.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] };
+
+const auth = new google.auth.GoogleAuth(googleAuthConfig);
 const sheets = google.sheets({ version: 'v4', auth });
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
@@ -432,6 +436,21 @@ app.get('/api/debug-email', (req, res) => {
     ai_model: AI_MODEL,
   });
 });
+
+// ─────────────────────────────────────────────
+// Serve React frontend in production (Railway)
+// In development, React runs on its own port via npm run dev
+// In production (Railway), Express serves the built React files
+// ─────────────────────────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  const buildPath = path.join(__dirname, 'client', 'build');
+  app.use(express.static(buildPath));
+  // Any route not matching /api/* → serve React index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
+  console.log('📦 Serving React build from client/build');
+}
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
