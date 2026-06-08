@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { google } = require('googleapis');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 require('dotenv').config();
 
 const app = express();
@@ -23,23 +23,15 @@ const sheets = google.sheets({ version: 'v4', auth });
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
 // ─────────────────────────────────────────────
-// Email Setup
+// Email Setup (Resend)
 // ─────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_APP_PASSWORD,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const EMAIL_FROM = 'onboarding@resend.dev'; // replace with your verified domain sender
+const EMAIL_TO   = process.env.EMAIL_USER;
 
-transporter.verify((error) => {
-  if (error) {
-    console.error('❌ Email verification FAILED:', error.message);
-  } else {
-    console.log('✅ Email transporter verified — ready to send emails');
-  }
-});
+console.log(process.env.RESEND_API_KEY
+  ? '✅ Resend configured — ready to send emails'
+  : '⚠️  RESEND_API_KEY not set — emails disabled');
 
 // ─────────────────────────────────────────────
 // Anthropic Claude AI Setup (Hybrid)
@@ -125,28 +117,26 @@ async function flushSessionEmail(sessionId) {
       <td style="padding:8px;border:1px solid #ddd">${q.timestamp}</td>
     </tr>`).join('');
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: process.env.EMAIL_USER,
-    subject: `❓ ${questions.length} Unanswered Question(s) — Add to Google Sheet`,
-    html: `
-      <h2>Questions AI Could Not Answer</h2>
-      <p>These <strong>${questions.length}</strong> question(s) were not answered even by AI. Consider adding them to your Google Sheet for faster responses in future:</p>
-      <table style="border-collapse:collapse;width:100%">
-        <thead><tr style="background:#4a90d9;color:white">
-          <th style="padding:10px;border:1px solid #ddd">#</th>
-          <th style="padding:10px;border:1px solid #ddd">Question</th>
-          <th style="padding:10px;border:1px solid #ddd">Intent</th>
-          <th style="padding:10px;border:1px solid #ddd">Priority</th>
-          <th style="padding:10px;border:1px solid #ddd">Time</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <p><em>Tip: Adding these to the QnA_Database sheet reduces AI API calls and saves cost.</em></p>`,
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: EMAIL_TO,
+      subject: `❓ ${questions.length} Unanswered Question(s) — Add to Google Sheet`,
+      html: `
+        <h2>Questions AI Could Not Answer</h2>
+        <p>These <strong>${questions.length}</strong> question(s) were not answered even by AI. Consider adding them to your Google Sheet for faster responses in future:</p>
+        <table style="border-collapse:collapse;width:100%">
+          <thead><tr style="background:#4a90d9;color:white">
+            <th style="padding:10px;border:1px solid #ddd">#</th>
+            <th style="padding:10px;border:1px solid #ddd">Question</th>
+            <th style="padding:10px;border:1px solid #ddd">Intent</th>
+            <th style="padding:10px;border:1px solid #ddd">Priority</th>
+            <th style="padding:10px;border:1px solid #ddd">Time</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p><em>Tip: Adding these to the QnA_Database sheet reduces AI API calls and saves cost.</em></p>`,
+    });
     console.log(`✅ Unanswered summary email sent — ${questions.length} question(s)`);
   } catch (error) {
     console.error('Error sending summary email:', error);
@@ -224,9 +214,9 @@ async function saveLeadCapture(name, email, query, sentiment) {
 
 async function sendLeadEmail(name, email, query, sentiment) {
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: EMAIL_TO,
       subject: `🌍 New ${sentiment === 'high_priority' ? 'URGENT ' : ''}Travel Lead — ${name}`,
       html: `
         <h2>New Booking Intent Detected!</h2>
@@ -430,8 +420,8 @@ app.get('/api/health', (req, res) => {
 // Debug email endpoint
 app.get('/api/debug-email', (req, res) => {
   res.json({
-    email_user: process.env.EMAIL_USER,
-    password_loaded: !!process.env.EMAIL_APP_PASSWORD,
+    email_to: EMAIL_TO,
+    resend_key_loaded: !!process.env.RESEND_API_KEY,
     ai_key_loaded: !!ANTHROPIC_API_KEY,
     ai_model: AI_MODEL,
   });
