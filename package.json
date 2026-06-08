@@ -1,0 +1,32 @@
+{
+  "name": "travel-chatbot",
+  "version": "1.0.0",
+  "description": "AI-powered travel chatbot with Google Sheets integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "nodemon server.js",
+    "client": "cd client && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd client && npm install"
+  },
+  "keywords": [
+    "travel",
+    "chatbot",
+    "google-sheets",
+    "nodejs"
+  ],
+  "author": "tapchauhan2001@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "googleapis": "^118.0.0",
+    "nodemailer": "^6.9.3"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "nodemon": "^2.0.22"
+  }
+}

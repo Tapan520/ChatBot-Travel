@@ -1,0 +1,16 @@
+node_modules/
+client/node_modules/
+client/build/
+
+# Secrets — never commit these
+.env
+credentials.json
+
+# OS & editor
+.DS_Store
+*.log
+.vs/
+Thumbs.db
+
+# Temp/helper scripts
+fix-emoji.js
