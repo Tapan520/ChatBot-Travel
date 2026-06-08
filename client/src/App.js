@@ -158,7 +158,7 @@ function App() {
         <div className="chat-header">
           <div className="header-icon">✈️</div>
           <div>
-            <h2>Travel Assistant</h2>
+            <h2>AI Travel Assistant</h2>
           </div>
         </div>
 
