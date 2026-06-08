@@ -159,10 +159,6 @@ function App() {
           <div className="header-icon">✈️</div>
           <div>
             <h2>Travel Assistant</h2>
-            <p>Powered by Google Sheet + Claude AI</p>
-          </div>
-          <div className="ai-indicator">
-            <span className="ai-dot"></span> AI Active
           </div>
         </div>
 
